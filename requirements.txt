@@ -1,0 +1,15 @@
+requests
+python-dotenv
+openai
+reportlab
+langchain-openai
+langchain
+sqlalchemy
+typing
+fastapi
+pydantic
+uvicorn
+nest_asyncio
+langchain-community
+langchain_experimental
+neo4j
