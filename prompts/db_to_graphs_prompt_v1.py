@@ -1,4 +1,5 @@
 from langchain_core.prompts import SystemMessagePromptTemplate, PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate
+from schemas.mondial_schema import MONDIAL_SCHEMA
 
 DB_GRAPH_STRUCTURE = SystemMessagePromptTemplate.from_template("""
 # Knowledge Graph Construction Instructions for Database Tables
@@ -37,7 +38,6 @@ You are tasked with constructing a knowledge graph from descriptive information 
 ## 3. Relationships
 1. **HAS_COLUMN**: Connects a `TABLE` node to its respective `COLUMN` nodes.
 2. **FOREIGN_KEY_TO**: Connects a `COLUMN` node representing a foreign key to another `COLUMN` node in the referenced table.
-3. **RELATES_TO**: Connects two `TABLE` nodes that have foreign key associations.
 
 ---
 
@@ -64,7 +64,7 @@ Provide the knowledge graph in the following format:
 
 ## Example Input
 ---chunk---
-The table Country represents countries and their key attributes. Its primary key, CountryKey, uniquely identifies each entry using the column Code (a 4-character code, VARCHAR(4)). The table includes the following columns: Name (VARCHAR(35)), which is a unique identifier for the country's name; Capital (VARCHAR(35)), indicating the capital city; Province (VARCHAR(35)), specifying a province within the country; Area (FLOAT), which records the total area of the country; and Population (INT), representing the number of inhabitants. Constraints ensure data validity: CountryArea requires the Area to be non-negative, and CountryPop ensures the Population is non-negative.
+The table Country represents countries and their key attributes. Its primary key, CountryKey, uniquely identifies each entry using the column Code (a 4-character code, VARCHAR(4)). The table includes the following columns: Name (VARCHAR(35)), which is a unique identifier for the country's name; Capital (VARCHAR(35)), indicating the capital city; Province (VARCHAR(35)), specifying a province within the country; Area (FLOAT), which records the total area of the country; and Population (INT), representing the number of inhabitants. Constraints ensure data validity: CountryArea requires the Area to be non-negative, and CountryPop ensures the Population is non-negative. The column Province is a foreign key referencing the column Name in the Province table.
 ---chunk---
 
 ### Example Output
@@ -73,7 +73,7 @@ The table Country represents countries and their key attributes. Its primary key
   - `table_name`: "Country"
   - `columns`: ["Code", "Name", "Capital", "Province", "Area", "Population"]
   - `primary_key`: ["Code"]
-  - `foreign_keys`: []
+  - `foreign_keys`: [\'{{"Province": "Province.Name"}}\']
   - `table_description`: "Represents countries and their key attributes."
 
 - Node ID: `Country.Code`
@@ -84,13 +84,13 @@ The table Country represents countries and their key attributes. Its primary key
   - `is_foreign_key`: false
   - `column_description`: "A 4-character code that uniquely identifies the country."
 
-- Node ID: `Country.Name`
-  - `column_name`: "Name"
+- Node ID: `Country.Province`
+  - `column_name`: "Province"
   - `data_type`: "VARCHAR(35)"
   - `is_nullable`: true
   - `is_primary_key`: false
-  - `is_foreign_key`: false
-  - `column_description`: "A unique identifier for the country's name."
+  - `is_foreign_key`: true
+  - `column_description`: "A province within the country."
 
 #### Relationships
 - Relationship Type: `HAS_COLUMN`
@@ -99,12 +99,16 @@ The table Country represents countries and their key attributes. Its primary key
 
 - Relationship Type: `HAS_COLUMN`
   - Source: `Country`
-  - Target: `Country.Name`
+  - Target: `Country.Province`
+
+- Relationship Type: `FOREIGN_KEY_TO`
+  - Source: `Country.Province`
+  - Target: `Province.Name`
 
 ---
 
 ## Task
-Based on the descriptive chunks provided, construct the knowledge graph with nodes and relationships using the format above.
+Based on the descriptive chunks provided, construct the knowledge graph with nodes and relationships using the format above. Ensure all foreign keys and their referenced tables are explicitly captured.
 """)
 
 DB_GRAPH_STRUCTURE_TIP = HumanMessagePromptTemplate(
@@ -112,8 +116,13 @@ DB_GRAPH_STRUCTURE_TIP = HumanMessagePromptTemplate(
 Ensure you extract all relevant information from each chunk and strictly adhere to the format and rules provided above. Focus on:
 1. Identifying TABLE nodes with all attributes (`table_name`, `columns`, `primary_key`, etc.).
 2. Identifying COLUMN nodes with their attributes (`column_name`, `data_type`, etc.).
-3. Creating appropriate relationships (`HAS_COLUMN`, `FOREIGN_KEY_TO`, `RELATES_TO`).
-Use consistent node and relationship naming conventions. Based on the input chunk below, construct the graph:
+3. Creating appropriate relationships (`HAS_COLUMN`, `FOREIGN_KEY_TO`).
+Use consistent node and relationship naming conventions. 
+
+You can get information from schema below to construct the Foreign Keys or other relations between tables:
+""" + MONDIAL_SCHEMA + """
+
+Based on the input chunk below, construct the graph:
 {input}
 """)
 )
