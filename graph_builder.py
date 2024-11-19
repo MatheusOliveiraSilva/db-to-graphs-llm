@@ -40,7 +40,7 @@ class DBToGraph:
             node_properties=[
                 "table_name", "columns", "primary_key", "foreign_keys", "table_description",
                 "column_name", "data_type", "is_nullable", "is_primary_key", "is_foreign_key", "column_description"
-             ]
+            ]
         )
 
     def transform_schema_to_langchain_documents(self, schema):
@@ -56,7 +56,7 @@ class DBToGraph:
                 for table in tables:
                     augmented_schema_chunk = self.augment_table_infos(f"CREATE TABLE {table}")
                     file.write(augmented_schema_chunk)
-                    file.write("\n")
+                    file.write("\n---chunk---\n")
                     langchain_documents.append(Document(page_content=augmented_schema_chunk))
                     print(f"Just created chunk:", augmented_schema_chunk)
         else:
